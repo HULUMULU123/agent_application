@@ -8,6 +8,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  LineChart,
+  Line,
+  Legend,
 } from 'recharts';
 
 import 'ag-grid-community/styles/ag-grid.css';
@@ -95,6 +98,20 @@ export default function StepTransactions() {
     return dataset.map((item) => ({ amountRange: item.label, transactions: item.transactions }));
   }, [rowData]);
 
+  const activityByHour = useMemo(
+    () => [
+      { hour: '08:00', inflow: 6, outflow: 2 },
+      { hour: '09:00', inflow: 9, outflow: 4 },
+      { hour: '10:00', inflow: 12, outflow: 7 },
+      { hour: '11:00', inflow: 10, outflow: 8 },
+      { hour: '12:00', inflow: 14, outflow: 11 },
+      { hour: '13:00', inflow: 16, outflow: 9 },
+      { hour: '14:00', inflow: 13, outflow: 6 },
+      { hour: '15:00', inflow: 11, outflow: 5 },
+    ],
+    []
+  );
+
   return (
     <div className="grid-wrapper">
       <div className="page-card">
@@ -111,23 +128,43 @@ export default function StepTransactions() {
           />
         </div>
       </div>
-      <div className="chart-card">
-        <h3>Распределение сумм транзакций</h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={distribution} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#55bb9b" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#55bb9b" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(85, 187, 155, 0.3)" />
-            <XAxis dataKey="amountRange" tick={{ fill: '#536471', fontSize: 12 }} />
-            <YAxis allowDecimals={false} tick={{ fill: '#536471', fontSize: 12 }} />
-            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-            <Area type="monotone" dataKey="transactions" stroke="#55bb9b" fill="url(#areaGradient)" />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className="charts-grid">
+        <div className="chart-card">
+          <h3>Распределение сумм транзакций</h3>
+          <div className="chart-shell">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={distribution} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#55bb9b" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#55bb9b" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(85, 187, 155, 0.3)" />
+                <XAxis dataKey="amountRange" tick={{ fill: '#536471', fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fill: '#536471', fontSize: 12 }} />
+                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                <Area type="monotone" dataKey="transactions" stroke="#55bb9b" fill="url(#areaGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="chart-card">
+          <h3>Активность по часам</h3>
+          <div className="chart-shell">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={activityByHour} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(47, 58, 69, 0.18)" />
+                <XAxis dataKey="hour" tick={{ fill: '#536471', fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fill: '#536471', fontSize: 12 }} />
+                <Tooltip formatter={(value) => `${value} операций`} />
+                <Legend verticalAlign="top" iconType="circle" height={36} />
+                <Line type="monotone" dataKey="inflow" name="Поступления" stroke="#55bb9b" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="outflow" name="Списания" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   );

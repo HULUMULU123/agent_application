@@ -2,62 +2,129 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: linear-gradient(120deg, rgba(85, 187, 155, 0.95), rgba(62, 141, 116, 0.95));
-  backdrop-filter: blur(12px);
+  background: linear-gradient(135deg, rgba(53, 156, 126, 0.98), rgba(38, 118, 92, 0.94));
+  backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 38px;
+  gap: 32px;
+  padding: 18px 40px;
   color: white;
-  box-shadow: 0 16px 40px -26px rgba(31, 43, 55, 0.65);
+  box-shadow: 0 18px 44px -30px rgba(17, 27, 36, 0.7);
 }
 
 .brand {
-  font-weight: 700;
-  font-size: 20px;
-  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: inherit;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.55);
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-copy strong {
+  font-size: 18px;
+  letter-spacing: 0.6px;
+}
+
+.brand-copy span {
+  font-size: 12px;
+  opacity: 0.82;
 }
 
 .nav-menu {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-rail {
   display: flex;
   gap: 12px;
-  align-items: center;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .nav-item {
-  position: relative;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  padding: 10px 18px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
   border-radius: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  position: relative;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.nav-item .indicator {
-  position: absolute;
-  height: 3px;
-  left: 12px;
-  right: 12px;
-  bottom: 6px;
-  border-radius: 999px;
-  background: transparent;
+.nav-item__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.12);
   transition: background 0.2s ease;
 }
 
-.nav-item.active {
-  background: rgba(31, 43, 55, 0.12);
+.nav-item::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.nav-item.active .indicator {
-  background: white;
+.nav-item svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.nav-item__label {
+  font-size: 14px;
+}
+
+.nav-item:hover::after {
+  opacity: 1;
 }
 
 .nav-item:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.18);
+}
+
+.nav-item.active {
+  background: white;
+  color: #1c2a33;
+  box-shadow: 0 16px 30px -22px rgba(0, 0, 0, 0.45);
+}
+
+.nav-item.active::after {
+  opacity: 0;
+}
+
+.nav-item.active .nav-item__icon {
+  background: rgba(28, 42, 51, 0.08);
 }
 
 .user-stack {
@@ -67,36 +134,43 @@
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.45);
 }
 
 .logout-button {
   border: none;
-  background: rgba(31, 43, 55, 0.18);
+  background: rgba(12, 23, 32, 0.24);
   color: white;
   padding: 10px 18px;
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .logout-button:hover {
-  background: rgba(31, 43, 55, 0.24);
+  background: rgba(12, 23, 32, 0.32);
+  transform: translateY(-1px);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .top-bar {
     flex-wrap: wrap;
-    gap: 16px;
     justify-content: center;
+    gap: 18px;
   }
 
   .nav-menu {
     order: 3;
+    width: 100%;
+  }
+
+  .nav-rail {
+    width: 100%;
+    justify-content: center;
   }
 }

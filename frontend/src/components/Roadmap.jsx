@@ -9,6 +9,36 @@ export default function Roadmap({ steps, activeStep, onStepClick, isAnalyzing })
         <h2>Роадмап мультиагента</h2>
         <span>{isAnalyzing ? 'Аналитика в процессе…' : 'Нажмите на этап, чтобы вернуться'}</span>
       </div>
+      <div className="timeline-flow" aria-hidden>
+        {steps.map((step, index) => {
+          const isCompleted = step.id < activeStep;
+          const isCurrent = step.id === activeStep;
+          const connectorSymbol = isCompleted || isCurrent ? '→' : '…';
+
+          return (
+            <React.Fragment key={`flow-${step.id}`}>
+              <span
+                className={classNames('timeline-flow__node', {
+                  completed: isCompleted,
+                  active: isCurrent,
+                })}
+              >
+                {step.id}
+              </span>
+              {index !== steps.length - 1 && (
+                <span
+                  className={classNames('timeline-flow__connector', {
+                    completed: isCompleted,
+                    active: isCurrent,
+                  })}
+                >
+                  {connectorSymbol}
+                </span>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
       <div className="timeline" role="list">
         {steps.map((step, index) => {
           const isCompleted = step.id < activeStep;
