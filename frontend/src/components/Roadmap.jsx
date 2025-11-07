@@ -4,29 +4,46 @@ import classNames from 'classnames';
 
 export default function Roadmap({ steps, activeStep, onStepClick, isAnalyzing }) {
   return (
-    <div className="roadmap-wrapper">
+    <section className="roadmap-wrapper">
       <div className="roadmap-header">
         <h2>Роадмап мультиагента</h2>
         <span>{isAnalyzing ? 'Аналитика в процессе…' : 'Нажмите на этап, чтобы вернуться'}</span>
       </div>
-      <div className="steps-track">
-        {steps.map((step, index) => (
-          <div
-            key={step.id}
-            className={classNames('step-chip', {
-              active: activeStep === step.id,
-              completed: step.id < activeStep,
-            })}
-            onClick={() => onStepClick(step.id)}
-          >
-            <div className="step-index">{step.id}</div>
-            <div className="step-label">{step.title}</div>
-            <div className="step-description">{step.description}</div>
-            {index !== steps.length - 1 && <span className="timeline-connector" />}
-          </div>
-        ))}
+      <div className="timeline" role="list">
+        {steps.map((step, index) => {
+          const isCompleted = step.id < activeStep;
+          const isActive = step.id === activeStep;
+          const connectorState = isCompleted ? 'completed' : isActive ? 'active' : 'upcoming';
+
+          return (
+            <div key={step.id} className="timeline-segment" role="listitem">
+              <button
+                type="button"
+                className={classNames('timeline-node', {
+                  completed: isCompleted,
+                  active: isActive,
+                })}
+                onClick={() => onStepClick(step.id)}
+                aria-current={isActive ? 'step' : undefined}
+              >
+                <span className="timeline-node__circle">
+                  <span className="timeline-node__number">{step.id}</span>
+                </span>
+                <span className="timeline-node__meta">
+                  <span className="timeline-node__title">{step.title}</span>
+                  <span className="timeline-node__description">{step.description}</span>
+                </span>
+              </button>
+              {index !== steps.length - 1 && (
+                <div className={classNames('timeline-connector', connectorState)} aria-hidden>
+                  <span className="timeline-connector__track" />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 }
 
