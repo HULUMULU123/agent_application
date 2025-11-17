@@ -2,98 +2,11 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import PropTypes from 'prop-types';
 import api from '../services/api.js';
 
-const fallbackDocuments = [
-  {
-    id: 'statement_november.pdf',
-    display_name: 'statement_november.pdf',
-    kind: 'pdf',
-    status: 'готово',
-    source: 'Веб-интерфейс',
-    uploaded_at: '2024-11-12T09:12:00Z',
-    detected_columns: 11,
-    detected_rows: 186,
-    preview_notes: 'Сгенерировано для предпросмотра интерфейса.',
-  },
-  {
-    id: 'counterparty_registry.csv',
-    display_name: 'counterparty_registry.csv',
-    kind: 'csv',
-    status: 'анализируется',
-    source: 'API',
-    uploaded_at: '2024-11-11T18:40:00Z',
-    detected_columns: 9,
-    detected_rows: 242,
-    preview_notes: 'Имитация активного задания.',
-  },
-  {
-    id: 'statement_october.xlsx',
-    display_name: 'statement_october.xlsx',
-    kind: 'excel',
-    status: 'архив',
-    source: 'Архив',
-    uploaded_at: '2024-11-05T10:28:00Z',
-    detected_columns: 8,
-    detected_rows: 96,
-    preview_notes: 'Архивная выгрузка.',
-  },
-];
-
-const fallbackAnalysis = {
-  cashflow: [
-    { month: 'Июль', inFlow: 12.4, outFlow: 9.1 },
-    { month: 'Август', inFlow: 13.8, outFlow: 11.2 },
-    { month: 'Сентябрь', inFlow: 15.6, outFlow: 12.5 },
-    { month: 'Октябрь', inFlow: 18.9, outFlow: 22.7 },
-    { month: 'Ноябрь', inFlow: 21.4, outFlow: 16.2 },
-  ],
-  category_split: [
-    { category: 'Зарплатные проекты', value: 6.4 },
-    { category: 'Подрядчики', value: 4.8 },
-    { category: 'Налоги', value: 3.1 },
-    { category: 'Операционные расходы', value: 2.6 },
-    { category: 'Инвестиции', value: 1.9 },
-  ],
-  balance_projection: [
-    { quarter: 'Q1', base: 42, stress: 35 },
-    { quarter: 'Q2', base: 48, stress: 38 },
-    { quarter: 'Q3', base: 54, stress: 43 },
-    { quarter: 'Q4', base: 61, stress: 46 },
-  ],
-  activity_heatmap: [
-    { day: 'Пн', inflow: 10, outflow: 6 },
-    { day: 'Вт', inflow: 12, outflow: 7 },
-    { day: 'Ср', inflow: 9, outflow: 4 },
-    { day: 'Чт', inflow: 14, outflow: 8 },
-    { day: 'Пт', inflow: 16, outflow: 9 },
-    { day: 'Сб', inflow: 8, outflow: 6 },
-    { day: 'Вс', inflow: 7, outflow: 5 },
-  ],
-  control_dates: [
-    { title: 'Контроль ДДС', date: '14.11.2024', owner: 'Финансы' },
-    { title: 'Повторная сверка', date: '17.11.2024', owner: 'СБ' },
-    { title: 'Юридический отчет', date: '20.11.2024', owner: 'Юристы' },
-  ],
-  transactions: [],
-  scores: [],
-  signals: [
-    {
-      title: 'Проверить лимиты контрагентов',
-      description: 'Объемы выросли на 18% неделя к неделе.',
-      provider: 'Внутренний скоринг',
-    },
-    {
-      title: 'Аномальные назначения платежей',
-      description: 'Совпадения по шаблону назначений у 2 новых партнеров.',
-      provider: 'ML пайплайн',
-    },
-  ],
-};
-
 const GlobalStateContext = createContext(null);
 
 export function GlobalStateProvider({ children }) {
-  const [documents, setDocuments] = useState(fallbackDocuments);
-  const [analysis, setAnalysis] = useState(fallbackAnalysis);
+  const [documents, setDocuments] = useState([]);
+  const [analysis, setAnalysis] = useState({});
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastUploadName, setLastUploadName] = useState(null);
@@ -104,7 +17,6 @@ export function GlobalStateProvider({ children }) {
       setDocuments(data);
     } catch (err) {
       setError(err.message || 'Не удалось загрузить документы');
-      setDocuments(fallbackDocuments);
     }
   };
 
@@ -114,7 +26,6 @@ export function GlobalStateProvider({ children }) {
       setAnalysis(result.payload || result);
     } catch (err) {
       setError(err.message || 'Не удалось получить аналитику');
-      setAnalysis(fallbackAnalysis);
     }
   };
 

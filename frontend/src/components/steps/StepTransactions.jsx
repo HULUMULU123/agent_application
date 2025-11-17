@@ -85,31 +85,32 @@ const columnDefs = [
 export default function StepTransactions() {
   const { analysis, downloadExport } = useGlobalState();
 
-  const syntheticRows = useMemo(() => {
-    return Array.from({ length: 30 }).map((_, index) => {
-      const amountRaw = 5000 + Math.random() * 95000;
-      const balanceRaw = 100000 + Math.random() * 250000;
-      const minutes = ((index * 7) % 60).toString().padStart(2, '0');
+  const rowData = useMemo(() => {
+    const transactions = analysis.transactions || [];
+    return transactions.map((tx, index) => {
+      const amountRaw = Math.abs(tx.amount ?? tx.amountRaw ?? 0);
+      const balanceRaw = Math.abs(tx.balance ?? tx.balanceRaw ?? 0);
+
       return {
-        id: index + 1,
-        date: new Date(2024, 10, (index % 27) + 1).toLocaleDateString('ru-RU'),
-        time: `${(8 + (index % 9)).toString().padStart(2, '0')}:${minutes}`,
-        document: `DOC-${12000 + index}`,
-        type: TYPES[index % TYPES.length],
-        category: CATEGORIES[index % CATEGORIES.length],
-        counterparty: `Контрагент ${index + 1}`,
-        inn: `77${(4500000 + index * 17).toString().padStart(7, '0')}`,
-        kpp: `77${(5500000 + index * 11).toString().padStart(7, '0')}`,
-        purpose: `Оплата по договору №${3000 + index}`,
-        amountRaw,
-        currency: 'RUB',
-        balanceRaw,
-        status: STATUSES[index % STATUSES.length],
-        channel: CHANNELS[index % CHANNELS.length],
-        tag: TAGS[index % TAGS.length],
+        id: tx.id || `tx-${index}`,
+        date: tx.date || tx.created_at || tx.createdAt || '—',
+        time: tx.time || tx.processed_at || tx.processedAt || '—',
+        document: tx.document || 'Документ',
+        type: tx.type || (tx.amount >= 0 ? 'Поступление' : 'Списание'),
+        category: tx.category || '—',
+        counterparty: tx.counterparty || 'Неизвестно',
+        inn: tx.inn || '—',
+        kpp: tx.kpp || '—',
+        purpose: tx.purpose || tx.description || '—',
+        amountRaw: amountRaw || 0,
+        currency: tx.currency || 'RUB',
+        balanceRaw: balanceRaw || amountRaw,
+        status: tx.status || (tx.risk === 'высокий' ? 'Отклонено' : 'Выполнено'),
+        channel: tx.channel || 'API',
+        tag: tx.tag || (tx.risk === 'высокий' ? 'Требует внимания' : 'Рутинное'),
       };
     });
-  }, []);
+  }, [analysis.transactions]);
 
   const mlRows = useMemo(() => {
     const transactions = analysis.transactions || [];
@@ -173,15 +174,7 @@ export default function StepTransactions() {
         outflow: item.outflow,
       }));
     }
-    return [
-      { hour: 'Вт', inflow: 6, outflow: 2 },
-      { hour: 'Ср', inflow: 9, outflow: 4 },
-      { hour: 'Чт', inflow: 12, outflow: 7 },
-      { hour: 'Пт', inflow: 10, outflow: 8 },
-      { hour: 'Сб', inflow: 14, outflow: 11 },
-      { hour: 'Вс', inflow: 16, outflow: 9 },
-      { hour: 'Пн', inflow: 13, outflow: 6 },
-    ];
+    return [];
   }, [analysis.activity_heatmap]);
 
   return (

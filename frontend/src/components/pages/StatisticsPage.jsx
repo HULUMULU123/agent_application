@@ -16,37 +16,12 @@ import {
 import StepCounterparties from '../steps/StepCounterparties.jsx';
 import { useGlobalState } from '../../store/GlobalState.jsx';
 
-const fallbackCashflow = [
-  { month: 'Июль', inFlow: 12.4, outFlow: 9.1 },
-  { month: 'Август', inFlow: 13.8, outFlow: 11.2 },
-  { month: 'Сентябрь', inFlow: 15.6, outFlow: 12.5 },
-  { month: 'Октябрь', inFlow: 18.9, outFlow: 22.7 },
-  { month: 'Ноябрь', inFlow: 21.4, outFlow: 16.2 },
-];
-
-const fallbackCategorySplit = [
-  { category: 'Зарплатные проекты', value: 6.4 },
-  { category: 'Подрядчики', value: 4.8 },
-  { category: 'Налоги', value: 3.1 },
-  { category: 'Операционные расходы', value: 2.6 },
-  { category: 'Инвестиции', value: 1.9 },
-];
-
-const fallbackBalanceProjection = [
-  { quarter: 'Q1', base: 42, stress: 35 },
-  { quarter: 'Q2', base: 48, stress: 38 },
-  { quarter: 'Q3', base: 54, stress: 43 },
-  { quarter: 'Q4', base: 61, stress: 46 },
-];
-
 export default function StatisticsPage() {
   const { analysis } = useGlobalState();
 
-  const cashflowData = analysis.cashflow?.length ? analysis.cashflow : fallbackCashflow;
-  const categorySplit = analysis.category_split?.length ? analysis.category_split : fallbackCategorySplit;
-  const balanceProjection = analysis.balance_projection?.length
-    ? analysis.balance_projection
-    : fallbackBalanceProjection;
+  const cashflowData = analysis.cashflow || [];
+  const categorySplit = analysis.category_split || [];
+  const balanceProjection = analysis.balance_projection || [];
 
   const formattedCashflow = useMemo(
     () =>

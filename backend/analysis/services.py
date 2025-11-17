@@ -44,6 +44,16 @@ def build_analysis_payload(document_name: str) -> dict:
     transactions = ml.predict_transactions(document_name)
     scores = [external.fetch_counterparty_score(f'77{450000 + idx * 3}') for idx in range(3)]
     signals = external.latest_signals()
+    registry = [
+        {
+            'name': f'Контрагент {idx + 1}',
+            'inn': score['inn'],
+            'segment': score['provider'],
+            'operations': 32 + idx * 12,
+            'risk': 'низкий' if score['score'] > 0.75 else 'средний',
+        }
+        for idx, score in enumerate(scores)
+    ]
 
     return {
         'cashflow': ml.build_cashflow_summary(),
@@ -59,6 +69,11 @@ def build_analysis_payload(document_name: str) -> dict:
         ],
         'transactions': transactions,
         'scores': scores,
+        'registry': registry,
+        'counterparty_volume': ml.counterparty_volume(transactions),
+        'risk_mix': ml.risk_mix(transactions),
+        'counterparty_trend': ml.counterparty_trend(transactions),
+        'counterparty_velocity': ml.counterparty_velocity(transactions),
         'signals': signals,
         'generated_at': datetime.utcnow().isoformat(),
     }
