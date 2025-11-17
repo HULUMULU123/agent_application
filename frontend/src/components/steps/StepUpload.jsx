@@ -6,7 +6,7 @@ const recentDocuments = [
     id: 'statement_november.pdf',
     type: 'PDF',
     uploadedAt: '12.11.2024, 09:12',
-    status: 'обработано',
+    status: 'загружено',
   },
   {
     id: 'counterparty_registry.csv',
@@ -23,7 +23,7 @@ const recentDocuments = [
 ];
 
 const statusTone = {
-  обработано: 'status-positive',
+  загружено: 'status-positive',
   'в очереди': 'status-progress',
   архив: 'status-muted',
 };
@@ -33,7 +33,7 @@ export default function StepUpload({ onStartAnalysis, disabled }) {
     <div className="page-card">
       <h3 className="section-title">Загрузка документа</h3>
       <p className="helper-text">
-        Вставьте ваш файл, а остальное оставьте нам — мультиагент сам поймет структуру
+        Вставьте ваш файл, а остальное оставьте нам - Агент сам поймет структуру
         выписки и подготовит следующий шаг.
       </p>
       <div className="upload-zone">

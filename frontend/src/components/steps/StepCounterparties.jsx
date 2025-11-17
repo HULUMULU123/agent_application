@@ -70,7 +70,7 @@ export default function StepCounterparties() {
   return (
     <div className="dashboard-grid">
       <div className="metric-card">
-        <span className="metric-label">Объем платежей ТОП-4</span>
+        <span className="metric-label">ТОП-4 транзакций по сумме</span>
         <span className="metric-value">18,2 млн ₽</span>
         <div className="mini-trend">
           <ResponsiveContainer width="100%" height="100%">
@@ -88,7 +88,7 @@ export default function StepCounterparties() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <p className="helper-text">Последние пять месяцев прирост активности +42%</p>
+        <p className="helper-text">Увеличение транзакций за последние <b>5</b> месяцев на <b>+42%</b></p>
       </div>
 
       <div className="metric-card">
@@ -114,7 +114,7 @@ export default function StepCounterparties() {
       </div>
 
       <div className="metric-card">
-        <span className="metric-label">Распределение рисков</span>
+        <span className="metric-label">Распределение транзакций по уровню риска</span>
         <div className="chart-shell chart-shell--compact">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -177,8 +177,8 @@ export default function StepCounterparties() {
               <YAxis allowDecimals={false} tick={{ fill: '#536471', fontSize: 12 }} />
               <Tooltip formatter={(value) => `${value} контрагентов`} />
               <Legend verticalAlign="top" iconType="circle" height={32} />
-              <Line type="monotone" dataKey="newPartners" name="Новых партнеров" stroke="#55bb9b" strokeWidth={3} dot={{ r: 4 }} />
-              <Line type="monotone" dataKey="alerts" name="Алертов" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="newPartners" name="Новые партнеры" stroke="#55bb9b" strokeWidth={3} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="alerts" name="Контрагенты для проверки" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

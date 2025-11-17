@@ -36,7 +36,7 @@ const steps = [
 
 const stepInsights = {
   1: {
-    title: 'Что делает мультиагент на шаге импорта',
+    title: 'Что делает Агент на шаге импорта',
     bullets: [
       'Считывает формат и выравнивает колонки выписки, чтобы не терялась структура.',
       'Находит потенциальные ошибки в данных до запуска аналитики.',
@@ -98,11 +98,11 @@ export default function App() {
     steps.forEach((step, index) => {
       if (index === 0) return;
       const timeoutId = setTimeout(() => {
-        setActiveStep(step.id);
-        if (index === steps.length - 1) {
+        setActiveStep(2);
+        if (index === 1) {
           setIsAnalyzing(false);
         }
-      }, index * 5000);
+      }, index * 1000);
       timeoutsRef.current.push(timeoutId);
     });
   };
@@ -130,16 +130,8 @@ export default function App() {
   const mainPage = (
     <div className="content-wrapper">
       <Roadmap steps={steps} activeStep={activeStep} onStepClick={handleStepClick} isAnalyzing={isAnalyzing} />
-      <div className="page-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>{renderStepContent()}</div>
-        <aside className="page-card">
+      <aside className="page-card">
           <h3 className="section-title">{insight.title}</h3>
-          <span className="status-chip" aria-live="polite">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm.5 2v5.25l3.5 2.05-.75 1.23L11 12V7h1.5z" />
-            </svg>
-            На каждый этап 5 секунд аналитики
-          </span>
           <ul className="insight-list">
             {insight.bullets.map((item) => (
               <li key={item} className="insight-item">
@@ -149,6 +141,9 @@ export default function App() {
             ))}
           </ul>
         </aside>
+      <div className="page-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>{renderStepContent()}</div>
+        
       </div>
     </div>
   );
@@ -169,7 +164,7 @@ export default function App() {
     <div className="app-shell">
       <Header activePage={activePage} onNavigate={handleNavigate} />
       {renderPage()}
-      <OverlayLoader visible={isAnalyzing} label="Мультиагент обрабатывает этапы и собирает инсайты…" />
+      <OverlayLoader visible={isAnalyzing} label="Агент обрабатывает этапы и собирает инсайты…" />
     </div>
   );
 }

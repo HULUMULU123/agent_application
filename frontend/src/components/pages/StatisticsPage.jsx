@@ -19,7 +19,7 @@ const cashflowData = [
   { month: 'Июль', inFlow: 12.4, outFlow: 9.1 },
   { month: 'Август', inFlow: 13.8, outFlow: 11.2 },
   { month: 'Сентябрь', inFlow: 15.6, outFlow: 12.5 },
-  { month: 'Октябрь', inFlow: 18.9, outFlow: 14.7 },
+  { month: 'Октябрь', inFlow: 18.9, outFlow: 22.7 },
   { month: 'Ноябрь', inFlow: 21.4, outFlow: 16.2 },
 ];
 
@@ -63,7 +63,7 @@ export default function StatisticsPage() {
               <Tooltip formatter={(value) => `${value.toFixed(2)} млн ₽`} />
               <Legend verticalAlign="top" iconType="circle" height={32} />
               <Area type="monotone" dataKey="inFlow" name="Поступления" stroke="#55bb9b" fill="url(#flowIn)" strokeWidth={3} />
-              <Area type="monotone" dataKey="outFlow" name="Списания" stroke="#2f3a45" fill="url(#flowOut)" strokeWidth={3} />
+              <Area type="monotone" dataKey="outFlow" name="Расходные операции" stroke="#2f3a45" fill="url(#flowOut)" strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -83,7 +83,7 @@ export default function StatisticsPage() {
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="chart-card">
+        {/* <div className="chart-card">
           <h3>Прогноз баланса</h3>
           <div className="chart-shell">
             <ResponsiveContainer width="100%" height="100%">
@@ -98,7 +98,7 @@ export default function StatisticsPage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </div> */}
       </div>
       <StepCounterparties />
     </div>

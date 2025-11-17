@@ -21,5 +21,5 @@ OverlayLoader.propTypes = {
 
 OverlayLoader.defaultProps = {
   visible: false,
-  label: 'Мультиагент готовит аналитику…',
+  label: 'Агент готовит аналитику…',
 };

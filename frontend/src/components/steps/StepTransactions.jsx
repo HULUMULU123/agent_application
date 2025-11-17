@@ -16,24 +16,6 @@ import {
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-const columnDefs = [
-  { headerName: 'Дата', field: 'date', minWidth: 120 },
-  { headerName: 'Время', field: 'time', minWidth: 110 },
-  { headerName: 'Документ', field: 'document', minWidth: 140 },
-  { headerName: 'Тип', field: 'type', minWidth: 110 },
-  { headerName: 'Категория', field: 'category', minWidth: 130 },
-  { headerName: 'Контрагент', field: 'counterparty', minWidth: 160 },
-  { headerName: 'ИНН', field: 'inn', minWidth: 130 },
-  { headerName: 'КПП', field: 'kpp', minWidth: 130 },
-  { headerName: 'Назначение', field: 'purpose', minWidth: 200 },
-  { headerName: 'Сумма', field: 'amount', minWidth: 130 },
-  { headerName: 'Валюта', field: 'currency', minWidth: 110 },
-  { headerName: 'Баланс', field: 'balance', minWidth: 140 },
-  { headerName: 'Статус', field: 'status', minWidth: 120 },
-  { headerName: 'Канал', field: 'channel', minWidth: 120 },
-  { headerName: 'Тег', field: 'tag', minWidth: 110 },
-];
-
 const STATUSES = ['Выполнено', 'Ожидает', 'Отклонено'];
 const CHANNELS = ['API', 'Мобильный банк', 'Интернет-банк'];
 const CATEGORIES = ['Зарплата', 'Подрядчики', 'Налоги', 'Закупки'];
@@ -46,11 +28,64 @@ const formatNumber = (value) =>
     maximumFractionDigits: 2,
   });
 
+const defaultColDef = {
+  sortable: true,
+  resizable: true,
+  filter: true,            // базово включаем фильтры
+  floatingFilter: true,    // строка фильтра в хедере
+};
+
+const textFilterParams = {
+  debounceMs: 200,
+  buttons: ['reset'],
+};
+
+const setFilterParams = {
+  debounceMs: 0,
+  suppressSorting: false,
+  excelMode: 'windows',
+};
+
+const columnDefs = [
+  { headerName: 'Дата', field: 'date', minWidth: 120, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+  { headerName: 'Время', field: 'time', minWidth: 110, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+  { headerName: 'Документ', field: 'document', minWidth: 140, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+  { headerName: 'Тип', field: 'type', minWidth: 110, filter: 'agSetColumnFilter', filterParams: { ...setFilterParams, values: TYPES } },
+  { headerName: 'Категория', field: 'category', minWidth: 130, filter: 'agSetColumnFilter', filterParams: { ...setFilterParams, values: CATEGORIES } },
+  { headerName: 'Контрагент', field: 'counterparty', minWidth: 160, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+  { headerName: 'ИНН', field: 'inn', minWidth: 130, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+  { headerName: 'КПП', field: 'kpp', minWidth: 130, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+  { headerName: 'Назначение', field: 'purpose', minWidth: 200, filter: 'agTextColumnFilter', filterParams: textFilterParams },
+
+  // Числовые колонки: используем raw-значения для фильтра/сортировки и форматтер для отображения
+  {
+    headerName: 'Сумма',
+    field: 'amountRaw',
+    minWidth: 130,
+    filter: 'agNumberColumnFilter',
+    valueGetter: (p) => p.data.amountRaw,
+    valueFormatter: (p) => formatNumber(p.value),
+  },
+  { headerName: 'Валюта', field: 'currency', minWidth: 110, filter: 'agSetColumnFilter', filterParams: { ...setFilterParams, values: ['RUB'] } },
+  {
+    headerName: 'Баланс',
+    field: 'balanceRaw',
+    minWidth: 140,
+    filter: 'agNumberColumnFilter',
+    valueGetter: (p) => p.data.balanceRaw,
+    valueFormatter: (p) => formatNumber(p.value),
+  },
+
+  { headerName: 'Статус', field: 'status', minWidth: 120, filter: 'agSetColumnFilter', filterParams: { ...setFilterParams, values: STATUSES } },
+  { headerName: 'Канал', field: 'channel', minWidth: 120, filter: 'agSetColumnFilter', filterParams: { ...setFilterParams, values: CHANNELS } },
+  { headerName: 'Тег', field: 'tag', minWidth: 110, filter: 'agSetColumnFilter', filterParams: { ...setFilterParams, values: TAGS } },
+];
+
 export default function StepTransactions() {
   const rowData = useMemo(() => {
     return Array.from({ length: 30 }).map((_, index) => {
-      const amount = 5000 + Math.random() * 95000;
-      const balance = 100000 + Math.random() * 250000;
+      const amountRaw = 5000 + Math.random() * 95000;
+      const balanceRaw = 100000 + Math.random() * 250000;
       const minutes = ((index * 7) % 60).toString().padStart(2, '0');
       return {
         id: index + 1,
@@ -63,9 +98,9 @@ export default function StepTransactions() {
         inn: `77${(4500000 + index * 17).toString().padStart(7, '0')}`,
         kpp: `77${(5500000 + index * 11).toString().padStart(7, '0')}`,
         purpose: `Оплата по договору №${3000 + index}`,
-        amount: formatNumber(amount),
+        amountRaw,
         currency: 'RUB',
-        balance: formatNumber(balance),
+        balanceRaw,
         status: STATUSES[index % STATUSES.length],
         channel: CHANNELS[index % CHANNELS.length],
         tag: TAGS[index % TAGS.length],
@@ -88,7 +123,7 @@ export default function StepTransactions() {
     }));
 
     rowData.forEach((row) => {
-      const rawAmount = parseFloat(row.amount.replace(/\s/g, '').replace(',', '.'));
+      const rawAmount = row.amountRaw;
       const bucketIndex = buckets.findIndex((bucket) => rawAmount >= bucket.min && rawAmount < bucket.max);
       if (bucketIndex >= 0) {
         dataset[bucketIndex].transactions += 1;
@@ -100,14 +135,14 @@ export default function StepTransactions() {
 
   const activityByHour = useMemo(
     () => [
-      { hour: '08:00', inflow: 6, outflow: 2 },
-      { hour: '09:00', inflow: 9, outflow: 4 },
-      { hour: '10:00', inflow: 12, outflow: 7 },
-      { hour: '11:00', inflow: 10, outflow: 8 },
-      { hour: '12:00', inflow: 14, outflow: 11 },
-      { hour: '13:00', inflow: 16, outflow: 9 },
-      { hour: '14:00', inflow: 13, outflow: 6 },
-      { hour: '15:00', inflow: 11, outflow: 5 },
+      { hour: 'Вт', inflow: 6, outflow: 2 },
+      { hour: 'Ср', inflow: 9, outflow: 4 },
+      { hour: 'Чт', inflow: 12, outflow: 7 },
+      { hour: 'Пт', inflow: 10, outflow: 8 },
+      { hour: 'Сб', inflow: 14, outflow: 11 },
+      { hour: 'Вс', inflow: 16, outflow: 9 },
+      { hour: 'Пн', inflow: 13, outflow: 6 },
+      
     ],
     []
   );
@@ -115,22 +150,27 @@ export default function StepTransactions() {
   return (
     <div className="grid-wrapper">
       <div className="page-card">
-        <h3 className="section-title">Таблица транзакций</h3>
+        <div style={{display: 'flex', justifyContent: 'space-between', width:'100%', alignItems: 'center'}}>
+          <h3 className="section-title">Таблица транзакций</h3>
+          <span style={{padding: '7px 10px', background: '#d6d6d6', fontSize:'8px', height: '25px', alignItems:'center', borderRadius: '7px', color:'#828282'}}>Скачать таблицу</span>
+        </div>
         <div className="ag-theme-quartz" style={{ width: '100%', height: 420 }}>
           <AgGridReact
             rowData={rowData}
             columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
             rowHeight={48}
             headerHeight={56}
-            suppressMenuHide
+            suppressMenuHide={false}
             pagination
             paginationPageSize={15}
+            animateRows
           />
         </div>
       </div>
       <div className="charts-grid">
         <div className="chart-card">
-          <h3>Распределение сумм транзакций</h3>
+          <h3>Суммы транзакций за один день</h3>
           <div className="chart-shell">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={distribution} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -150,7 +190,7 @@ export default function StepTransactions() {
           </div>
         </div>
         <div className="chart-card">
-          <h3>Активность по часам</h3>
+          <h3>Активность по дням</h3>
           <div className="chart-shell">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={activityByHour} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
@@ -160,7 +200,7 @@ export default function StepTransactions() {
                 <Tooltip formatter={(value) => `${value} операций`} />
                 <Legend verticalAlign="top" iconType="circle" height={36} />
                 <Line type="monotone" dataKey="inflow" name="Поступления" stroke="#55bb9b" strokeWidth={3} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="outflow" name="Списания" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="outflow" name="Расходные операции" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

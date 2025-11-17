@@ -33,8 +33,8 @@ export default function Header({ activePage, onNavigate }) {
       <div className="brand">
         <span className="brand-mark" aria-hidden />
         <div className="brand-copy">
-          <strong>Preza</strong>
-          <span>Finance AI</span>
+          <strong>Финансовый анализ</strong>
+          <span>банковских выписок</span>
         </div>
       </div>
       <nav className="nav-menu" role="tablist" aria-label="Основная навигация">
@@ -59,7 +59,9 @@ export default function Header({ activePage, onNavigate }) {
         </div>
       </nav>
       <div className="user-stack">
-        <div className="user-avatar" aria-label="Изображение пользователя" />
+        <div className="user-avatar" aria-label="Изображение пользователя" >
+          
+          </div>
         <button className="logout-button" type="button">
           Выйти
         </button>

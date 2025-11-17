@@ -41,7 +41,7 @@ export default function HistoryPage() {
   return (
     <div className="content-wrapper">
       <div className="page-card">
-        <h3 className="section-title">Журнал действий мультиагента</h3>
+        <h3 className="section-title">Журнал действий Агента</h3>
         <p className="helper-text">Прозрачная история, чтобы быстро вернуться к важному шагу.</p>
         <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {historyEvents.map((event) => (
@@ -52,7 +52,7 @@ export default function HistoryPage() {
                 padding: '20px 24px',
                 display: 'grid',
                 gridTemplateColumns: '120px 1fr',
-                gap: 18px,
+                gap: '18px',
                 background: statusColor[event.status],
                 border: '1px solid rgba(85, 187, 155, 0.1)',
               }}

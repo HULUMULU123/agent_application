@@ -1,9 +1,9 @@
 :root {
-  --primary: #55bb9b;
+  --primary: #11998e;
   --primary-soft: rgba(85, 187, 155, 0.18);
   --dark: #1f2b37;
   --muted: #7f8a96;
-  --background: #eef3f1;
+  --background: #e0e0e0;
   --surface: #ffffff;
   --border: rgba(31, 43, 55, 0.08);
   --shadow: 0 18px 48px -32px rgba(31, 43, 55, 0.45);
@@ -51,6 +51,7 @@
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
+  width: 60%;
 }
 
 .insight-list {
@@ -278,7 +279,7 @@
   content: '';
   position: absolute;
   border-radius: inherit;
-  transition: background 0.5s ease;
+  transition: background 0.5s ease, box-shadow 0.4s ease;
 }
 
 .timeline-node__circle::before {
@@ -300,16 +301,22 @@
   z-index: 1;
 }
 
+/* ✅ Активный круг теперь не частично закрашен */
 .timeline-node.active .timeline-node__circle {
-  --fill: 0.45;
-  --circle-inner: #f4fbf8;
-  box-shadow: 0 10px 20px -12px rgba(85, 187, 155, 0.6);
+  --fill: 0;
+  --circle-inner: #ffffff;
+  box-shadow: 0 0 12px rgba(85, 187, 155, 0.5);
+}
+
+.timeline-node.active .timeline-node__circle::before {
+  background: rgba(85, 187, 155, 0.2);
 }
 
 .timeline-node.active .timeline-node__circle::after {
-  box-shadow: inset 0 0 0 1px rgba(85, 187, 155, 0.35);
+  box-shadow: inset 0 0 0 2px rgba(85, 187, 155, 0.5);
 }
 
+/* Завершённые */
 .timeline-node.completed .timeline-node__circle {
   --fill: 1;
   --circle-inner: var(--primary);
@@ -323,6 +330,7 @@
 .timeline-node.completed .timeline-node__circle::after {
   box-shadow: none;
 }
+
 
 .timeline-node__meta {
   display: flex;
@@ -518,9 +526,8 @@
 .dashboard-grid {
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
 }
-
 .metric-card {
   background: var(--surface);
   border-radius: 22px;
@@ -530,6 +537,11 @@
   flex-direction: column;
   gap: 10px;
   box-shadow: 0 20px 45px -30px rgba(31, 43, 55, 0.4);
+
+  /* Центровка контента */
+  justify-content: center; /* по вертикали */
+  align-items: center;     /* по горизонтали */
+  text-align: center;      /* для текста и inline-элементов */
 }
 
 .metric-card--wide {
@@ -655,7 +667,7 @@
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 3000px) {
   .page-grid {
     grid-template-columns: 1fr;
   }
