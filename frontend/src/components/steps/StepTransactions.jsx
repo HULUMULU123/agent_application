@@ -112,6 +112,35 @@ export default function StepTransactions() {
     });
   }, [analysis.transactions]);
 
+  const mlRows = useMemo(() => {
+    const transactions = analysis.transactions || [];
+    return transactions.map((tx, index) => {
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() - index);
+      const absoluteAmount = Math.abs(tx.amount || 0);
+      return {
+        id: `ml-${index}`,
+        date: baseDate.toLocaleDateString('ru-RU'),
+        time: baseDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        document: tx.document || 'ML-поток',
+        type: absoluteAmount >= 0 ? 'Поступление' : 'Списание',
+        category: tx.category || 'ML аналитика',
+        counterparty: tx.counterparty || `Контрагент ML-${index + 1}`,
+        inn: tx.inn || `77${(4500000 + index * 17).toString().padStart(7, '0')}`,
+        kpp: tx.kpp || `77${(5500000 + index * 11).toString().padStart(7, '0')}`,
+        purpose: tx.description || 'Сгенерировано пайплайном моделей',
+        amountRaw: absoluteAmount || 12000,
+        currency: tx.currency || 'RUB',
+        balanceRaw: 100000 + absoluteAmount * 2,
+        status: tx.risk === 'высокий' ? 'Отклонено' : 'Выполнено',
+        channel: 'API',
+        tag: tx.risk === 'высокий' ? 'Требует внимания' : 'Рутинное',
+      };
+    });
+  }, [analysis.transactions]);
+
+  const rowData = useMemo(() => [...syntheticRows, ...mlRows], [mlRows, syntheticRows]);
+
   const distribution = useMemo(() => {
     const buckets = [
       { label: '0 — 10K', min: 0, max: 10000 },
