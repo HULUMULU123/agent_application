@@ -1,34 +1,62 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-
-const recentDocuments = [
-  {
-    id: 'statement_november.pdf',
-    type: 'PDF',
-    uploadedAt: '12.11.2024, 09:12',
-    status: 'загружено',
-  },
-  {
-    id: 'counterparty_registry.csv',
-    type: 'CSV',
-    uploadedAt: '11.11.2024, 18:40',
-    status: 'в очереди',
-  },
-  {
-    id: 'statement_october.xlsx',
-    type: 'XLSX',
-    uploadedAt: '05.11.2024, 10:28',
-    status: 'архив',
-  },
-];
+import { useGlobalState } from '../../store/GlobalState.jsx';
 
 const statusTone = {
   загружено: 'status-positive',
+  готово: 'status-positive',
   'в очереди': 'status-progress',
+  анализируется: 'status-progress',
   архив: 'status-muted',
+  черновик: 'status-muted',
 };
 
 export default function StepUpload({ onStartAnalysis, disabled }) {
+  const fileInputRef = useRef(null);
+  const [localStatus, setLocalStatus] = useState(null);
+  const { documents, uploadDocument, loading, error, lastUploadName } = useGlobalState();
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setLocalStatus(`Отправляем ${file.name} ...`);
+    uploadDocument(file)
+      .then(() => {
+        setLocalStatus('Файл отправлен, запускаем анализ');
+        onStartAnalysis();
+      })
+      .catch(() => {
+        setLocalStatus('Не удалось загрузить файл, попробуйте снова');
+      })
+      .finally(() => {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      });
+  };
+
+  const handleFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const formatType = (kind) => {
+    if (!kind) return '—';
+    if (['csv', 'pdf', 'excel'].includes(kind)) {
+      return kind.toUpperCase();
+    }
+    return kind;
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '—';
+    try {
+      const parsed = new Date(value);
+      return parsed.toLocaleString('ru-RU');
+    } catch (err) {
+      return value;
+    }
+  };
+
   return (
     <div className="page-card">
       <h3 className="section-title">Загрузка документа</h3>
@@ -40,13 +68,30 @@ export default function StepUpload({ onStartAnalysis, disabled }) {
         <strong>Перетащите выписку сюда</strong>
         <span>или выберите документ на устройстве</span>
         <div className="upload-actions">
-          <button className="secondary-button" type="button">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.pdf,.xls,.xlsx"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+          <button className="secondary-button" type="button" onClick={handleFilePicker} disabled={disabled || loading}>
             Выбрать файл
           </button>
-          <button className="primary-button" type="button" onClick={onStartAnalysis} disabled={disabled}>
+          <button className="primary-button" type="button" onClick={onStartAnalysis} disabled={disabled || loading}>
             Запустить анализ
           </button>
         </div>
+        {(localStatus || lastUploadName) && (
+          <p className="helper-text" style={{ marginTop: 12 }}>
+            {localStatus || `Последний документ: ${lastUploadName}`}
+          </p>
+        )}
+        {error && (
+          <p className="helper-text" style={{ marginTop: 12, color: '#d33' }}>
+            {error}
+          </p>
+        )}
       </div>
       <div className="table-stack">
         <div className="table-header">
@@ -63,13 +108,15 @@ export default function StepUpload({ onStartAnalysis, disabled }) {
             </tr>
           </thead>
           <tbody>
-            {recentDocuments.map((doc) => (
-              <tr key={doc.id}>
-                <td>{doc.id}</td>
-                <td>{doc.type}</td>
-                <td>{doc.uploadedAt}</td>
+            {documents.map((doc) => (
+              <tr key={doc.id || doc.display_name}>
+                <td>{doc.display_name || doc.id}</td>
+                <td>{formatType(doc.kind || doc.type)}</td>
+                <td>{formatDate(doc.uploaded_at || doc.uploadedAt)}</td>
                 <td>
-                  <span className={`status-chip ${statusTone[doc.status]}`}>{doc.status}</span>
+                  <span className={`status-chip ${statusTone[doc.status] || 'status-progress'}`}>
+                    {doc.status || 'анализируется'}
+                  </span>
                 </td>
               </tr>
             ))}

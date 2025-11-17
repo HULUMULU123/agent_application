@@ -14,51 +14,9 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
+import { useGlobalState } from '../../store/GlobalState.jsx';
 
 const COLORS = ['#55bb9b', '#2f3a45', '#9ddbc7', '#ffc857'];
-
-const counterpartiesByVolume = [
-  { name: 'ООО «Астра»', value: 8600000 },
-  { name: 'ИП Ковалев', value: 5400000 },
-  { name: 'ЗАО «Радар»', value: 4200000 },
-  { name: 'АО «Сфера»', value: 3600000 },
-];
-
-const riskMix = [
-  { name: 'Низкий', value: 64 },
-  { name: 'Средний', value: 28 },
-  { name: 'Высокий', value: 8 },
-];
-
-const trendData = [
-  { month: 'Июль', operations: 62 },
-  { month: 'Авг', operations: 74 },
-  { month: 'Сен', operations: 81 },
-  { month: 'Окт', operations: 95 },
-  { month: 'Ноя', operations: 108 },
-];
-
-const anomalies = [
-  { label: 'Сомнительные связи', count: 4 },
-  { label: 'Нетипичные суммы', count: 7 },
-  { label: 'Неактивные контрагенты', count: 2 },
-];
-
-const velocityData = [
-  { week: 'Нед 1', newPartners: 4, alerts: 1 },
-  { week: 'Нед 2', newPartners: 7, alerts: 3 },
-  { week: 'Нед 3', newPartners: 6, alerts: 2 },
-  { week: 'Нед 4', newPartners: 9, alerts: 2 },
-  { week: 'Нед 5', newPartners: 11, alerts: 4 },
-];
-
-const innRegistry = [
-  { name: 'ООО «Астра»', inn: '7712458790', segment: 'Поставщик', operations: 86, risk: 'низкий' },
-  { name: 'ЗАО «Радар»', inn: '7723589411', segment: 'Оборудование', operations: 42, risk: 'средний' },
-  { name: 'ООО «Мастер Групп»', inn: '7736984102', segment: 'Строительство', operations: 28, risk: 'высокий' },
-  { name: 'ИП Ковалев', inn: '7705932147', segment: 'Услуги', operations: 35, risk: 'низкий' },
-  { name: 'АО «Сфера»', inn: '7745896300', segment: 'IT', operations: 24, risk: 'средний' },
-];
 
 const riskBadgeMap = {
   низкий: 'risk-low',
@@ -67,11 +25,34 @@ const riskBadgeMap = {
 };
 
 export default function StepCounterparties() {
+  const { analysis } = useGlobalState();
+
+  const anomalies = (analysis.signals || []).map((signal, index) => ({
+    label: signal.title,
+    count: signal.count || index + 1,
+    provider: signal.provider,
+  }));
+
+  const innRegistry = analysis.registry ||
+    (analysis.scores || []).map((score, index) => ({
+      name: score.name || `Контрагент ${index + 1}`,
+      inn: score.inn,
+      segment: score.provider,
+      operations: score.operations || Math.round((score.score || 0.5) * 120),
+      risk: score.risk || (score.score > 0.8 ? 'низкий' : score.score > 0.6 ? 'средний' : 'высокий'),
+    }));
+
+  const counterpartiesByVolume = analysis.counterparty_volume || [];
+  const riskMix = analysis.risk_mix || [];
+  const trendData = analysis.counterparty_trend || [];
+  const velocityData = analysis.counterparty_velocity || [];
+  const topTotal = counterpartiesByVolume.reduce((acc, item) => acc + (item.value || 0), 0);
+
   return (
     <div className="dashboard-grid">
       <div className="metric-card">
         <span className="metric-label">ТОП-4 транзакций по сумме</span>
-        <span className="metric-value">18,2 млн ₽</span>
+        <span className="metric-value">{(topTotal / 1_000_000).toFixed(1)} млн ₽</span>
         <div className="mini-trend">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData}>
@@ -160,7 +141,14 @@ export default function StepCounterparties() {
                 alignItems: 'center',
               }}
             >
-              <span style={{ fontWeight: 600, color: '#2f3a45' }}>{item.label}</span>
+              <div>
+                <span style={{ fontWeight: 600, color: '#2f3a45' }}>{item.label}</span>
+                {item.provider && (
+                  <p className="helper-text" style={{ margin: 0 }}>
+                    {item.provider}
+                  </p>
+                )}
+              </div>
               <span style={{ fontSize: 18, fontWeight: 700, color: '#2f3a45' }}>{item.count}</span>
             </div>
           ))}
@@ -191,7 +179,7 @@ export default function StepCounterparties() {
             <tr>
               <th>Контрагент</th>
               <th>ИНН</th>
-              <th>Сегмент</th>
+              <th>Сегент</th>
               <th>Операций</th>
               <th>Риск</th>
             </tr>
@@ -204,7 +192,7 @@ export default function StepCounterparties() {
                 <td>{row.segment}</td>
                 <td>{row.operations}</td>
                 <td>
-                  <span className={`risk-badge ${riskBadgeMap[row.risk]}`}>{row.risk}</span>
+                  <span className={`status-chip ${riskBadgeMap[row.risk]}`}>{row.risk}</span>
                 </td>
               </tr>
             ))}

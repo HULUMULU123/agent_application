@@ -12,6 +12,7 @@ import {
   Line,
   Legend,
 } from 'recharts';
+import { useGlobalState } from '../../store/GlobalState.jsx';
 
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -31,8 +32,8 @@ const formatNumber = (value) =>
 const defaultColDef = {
   sortable: true,
   resizable: true,
-  filter: true,            // базово включаем фильтры
-  floatingFilter: true,    // строка фильтра в хедере
+  filter: true, // базово включаем фильтры
+  floatingFilter: true, // строка фильтра в хедере
 };
 
 const textFilterParams = {
@@ -82,31 +83,34 @@ const columnDefs = [
 ];
 
 export default function StepTransactions() {
+  const { analysis, downloadExport } = useGlobalState();
+
   const rowData = useMemo(() => {
-    return Array.from({ length: 30 }).map((_, index) => {
-      const amountRaw = 5000 + Math.random() * 95000;
-      const balanceRaw = 100000 + Math.random() * 250000;
-      const minutes = ((index * 7) % 60).toString().padStart(2, '0');
+    const transactions = analysis.transactions || [];
+    return transactions.map((tx, index) => {
+      const amountRaw = Math.abs(tx.amount ?? tx.amountRaw ?? 0);
+      const balanceRaw = Math.abs(tx.balance ?? tx.balanceRaw ?? 0);
+
       return {
-        id: index + 1,
-        date: new Date(2024, 10, (index % 27) + 1).toLocaleDateString('ru-RU'),
-        time: `${(8 + (index % 9)).toString().padStart(2, '0')}:${minutes}`,
-        document: `DOC-${12000 + index}`,
-        type: TYPES[index % TYPES.length],
-        category: CATEGORIES[index % CATEGORIES.length],
-        counterparty: `Контрагент ${index + 1}`,
-        inn: `77${(4500000 + index * 17).toString().padStart(7, '0')}`,
-        kpp: `77${(5500000 + index * 11).toString().padStart(7, '0')}`,
-        purpose: `Оплата по договору №${3000 + index}`,
-        amountRaw,
-        currency: 'RUB',
-        balanceRaw,
-        status: STATUSES[index % STATUSES.length],
-        channel: CHANNELS[index % CHANNELS.length],
-        tag: TAGS[index % TAGS.length],
+        id: tx.id || `tx-${index}`,
+        date: tx.date || tx.created_at || tx.createdAt || '—',
+        time: tx.time || tx.processed_at || tx.processedAt || '—',
+        document: tx.document || 'Документ',
+        type: tx.type || (tx.amount >= 0 ? 'Поступление' : 'Списание'),
+        category: tx.category || '—',
+        counterparty: tx.counterparty || 'Неизвестно',
+        inn: tx.inn || '—',
+        kpp: tx.kpp || '—',
+        purpose: tx.purpose || tx.description || '—',
+        amountRaw: amountRaw || 0,
+        currency: tx.currency || 'RUB',
+        balanceRaw: balanceRaw || amountRaw,
+        status: tx.status || (tx.risk === 'высокий' ? 'Отклонено' : 'Выполнено'),
+        channel: tx.channel || 'API',
+        tag: tx.tag || (tx.risk === 'высокий' ? 'Требует внимания' : 'Рутинное'),
       };
     });
-  }, []);
+  }, [analysis.transactions]);
 
   const distribution = useMemo(() => {
     const buckets = [
@@ -133,26 +137,38 @@ export default function StepTransactions() {
     return dataset.map((item) => ({ amountRange: item.label, transactions: item.transactions }));
   }, [rowData]);
 
-  const activityByHour = useMemo(
-    () => [
-      { hour: 'Вт', inflow: 6, outflow: 2 },
-      { hour: 'Ср', inflow: 9, outflow: 4 },
-      { hour: 'Чт', inflow: 12, outflow: 7 },
-      { hour: 'Пт', inflow: 10, outflow: 8 },
-      { hour: 'Сб', inflow: 14, outflow: 11 },
-      { hour: 'Вс', inflow: 16, outflow: 9 },
-      { hour: 'Пн', inflow: 13, outflow: 6 },
-      
-    ],
-    []
-  );
+  const activityByHour = useMemo(() => {
+    if (analysis.activity_heatmap && analysis.activity_heatmap.length) {
+      return analysis.activity_heatmap.map((item) => ({
+        hour: item.day,
+        inflow: item.inflow,
+        outflow: item.outflow,
+      }));
+    }
+    return [];
+  }, [analysis.activity_heatmap]);
 
   return (
     <div className="grid-wrapper">
       <div className="page-card">
-        <div style={{display: 'flex', justifyContent: 'space-between', width:'100%', alignItems: 'center'}}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 12 }}>
           <h3 className="section-title">Таблица транзакций</h3>
-          <span style={{padding: '7px 10px', background: '#d6d6d6', fontSize:'8px', height: '25px', alignItems:'center', borderRadius: '7px', color:'#828282'}}>Скачать таблицу</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => downloadExport('csv')}
+              style={{ padding: '7px 10px', background: '#d6d6d6', fontSize: '10px', height: '28px', borderRadius: '7px', color: '#828282', border: 'none' }}
+            >
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadExport('excel')}
+              style={{ padding: '7px 10px', background: '#d6d6d6', fontSize: '10px', height: '28px', borderRadius: '7px', color: '#828282', border: 'none' }}
+            >
+              Excel
+            </button>
+          </div>
         </div>
         <div className="ag-theme-quartz" style={{ width: '100%', height: 420 }}>
           <AgGridReact
@@ -198,9 +214,9 @@ export default function StepTransactions() {
                 <XAxis dataKey="hour" tick={{ fill: '#536471', fontSize: 12 }} />
                 <YAxis allowDecimals={false} tick={{ fill: '#536471', fontSize: 12 }} />
                 <Tooltip formatter={(value) => `${value} операций`} />
-                <Legend verticalAlign="top" iconType="circle" height={36} />
+                <Legend verticalAlign="top" iconType="circle" height={32} />
                 <Line type="monotone" dataKey="inflow" name="Поступления" stroke="#55bb9b" strokeWidth={3} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="outflow" name="Расходные операции" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="outflow" name="Списания" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
