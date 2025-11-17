@@ -5,14 +5,22 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AnalysisSnapshot, UploadedDocument
-from .serializers import AnalysisSnapshotSerializer, UploadedDocumentSerializer
+from .models import AgentMessage, AnalysisSnapshot, UploadedDocument
+from .serializers import (
+    AgentMessageSerializer,
+    AnalysisSnapshotSerializer,
+    AnalysisStatisticSerializer,
+    UploadedDocumentSerializer,
+)
 from .services import (
     build_analysis_payload,
     build_preview_notes,
     detect_kind,
     export_transactions_to_csv,
     export_transactions_to_excel,
+    latest_analysis_payload,
+    persist_analysis,
+    seed_demo_if_needed,
 )
 
 
@@ -22,33 +30,7 @@ class UploadedDocumentViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post']
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        if not queryset.exists():
-            sample = [
-                {
-                    'id': 1,
-                    'display_name': 'statement_november.pdf',
-                    'kind': 'pdf',
-                    'status': 'готово',
-                    'source': 'Веб-интерфейс',
-                    'uploaded_at': '2024-11-12T09:12:00Z',
-                    'detected_columns': 11,
-                    'detected_rows': 186,
-                    'preview_notes': 'Сгенерировано для предпросмотра интерфейса.',
-                },
-                {
-                    'id': 2,
-                    'display_name': 'counterparty_registry.csv',
-                    'kind': 'csv',
-                    'status': 'анализируется',
-                    'source': 'API',
-                    'uploaded_at': '2024-11-11T18:40:00Z',
-                    'detected_columns': 9,
-                    'detected_rows': 242,
-                    'preview_notes': 'Имитация активного задания.',
-                },
-            ]
-            return Response(sample)
+        seed_demo_if_needed()
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -68,27 +50,47 @@ class UploadedDocumentViewSet(viewsets.ModelViewSet):
         )
 
         payload = build_analysis_payload(file.name)
-        AnalysisSnapshot.objects.create(title=f'Анализ {file.name}', payload=payload, source_document=document)
+        snapshot = persist_analysis(document, payload)
+        AgentMessage.objects.bulk_create(
+            [
+                AgentMessage(snapshot=snapshot, role='user', content=f'Загрузил {file.name} для анализа.'),
+                AgentMessage(
+                    snapshot=snapshot,
+                    role='assistant',
+                    content='Анализ выполнен, построены графики и собрана статистика по контрагентам.',
+                ),
+            ]
+        )
 
         serializer = self.get_serializer(document)
-        return Response({'document': serializer.data, 'analysis': payload}, status=status.HTTP_201_CREATED)
+        history = AgentMessageSerializer(snapshot.messages.all(), many=True).data
+        stats = AnalysisStatisticSerializer(snapshot.statistics).data if hasattr(snapshot, 'statistics') else None
+        response = {'document': serializer.data, 'analysis': payload, 'history': history}
+        if stats:
+            response['statistics'] = stats
+        return Response(response, status=status.HTTP_201_CREATED)
 
 
 class AnalysisSummaryView(APIView):
     def get(self, request):
-        snapshot = AnalysisSnapshot.objects.order_by('-created_at').first()
-        payload = snapshot.payload if snapshot else build_analysis_payload('demo.csv')
+        snapshot, payload = latest_analysis_payload()
         serializer = AnalysisSnapshotSerializer(snapshot) if snapshot else None
-        response_data = {'payload': payload}
+        history = AgentMessageSerializer(snapshot.messages.all(), many=True).data if snapshot else []
+        statistics = (
+            AnalysisStatisticSerializer(snapshot.statistics).data if snapshot and hasattr(snapshot, 'statistics') else None
+        )
+
+        response_data = {'payload': payload, 'history': history}
         if serializer:
             response_data['snapshot'] = serializer.data
+        if statistics:
+            response_data['statistics'] = statistics
         return Response(response_data)
 
 
 class ExportCSVView(APIView):
     def get(self, request):
-        snapshot = AnalysisSnapshot.objects.order_by('-created_at').first()
-        payload = snapshot.payload if snapshot else build_analysis_payload('demo.csv')
+        snapshot, payload = latest_analysis_payload()
         transactions = payload.get('transactions', [])
         csv_content = export_transactions_to_csv(transactions)
         response = HttpResponse(csv_content, content_type='text/csv')
@@ -98,8 +100,7 @@ class ExportCSVView(APIView):
 
 class ExportExcelView(APIView):
     def get(self, request):
-        snapshot = AnalysisSnapshot.objects.order_by('-created_at').first()
-        payload = snapshot.payload if snapshot else build_analysis_payload('demo.csv')
+        snapshot, payload = latest_analysis_payload()
         transactions = payload.get('transactions', [])
         excel_content = export_transactions_to_excel(transactions)
         response = HttpResponse(

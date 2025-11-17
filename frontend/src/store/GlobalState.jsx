@@ -23,7 +23,12 @@ export function GlobalStateProvider({ children }) {
   const refreshAnalysis = async () => {
     try {
       const result = await api.fetchAnalysisSummary();
-      setAnalysis(result.payload || result);
+      const payload = result.payload || result;
+      setAnalysis({
+        ...payload,
+        history: result.history || payload.history || [],
+        statistics: result.statistics || payload.statistics || null,
+      });
     } catch (err) {
       setError(err.message || 'Не удалось получить аналитику');
     }
@@ -43,7 +48,12 @@ export function GlobalStateProvider({ children }) {
       setDocuments((prev) => [doc, ...prev.filter((item) => item.id !== doc.id)]);
       setLastUploadName(doc.display_name || file.name);
       if (data.analysis || data.payload) {
-        setAnalysis(data.analysis || data.payload);
+        const payload = data.analysis || data.payload;
+        setAnalysis({
+          ...payload,
+          history: data.history || payload.history || [],
+          statistics: data.statistics || payload.statistics || null,
+        });
       }
       return data;
     } catch (err) {

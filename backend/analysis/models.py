@@ -47,3 +47,45 @@ class AnalysisSnapshot(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.created_at:%Y-%m-%d})"
+
+
+class AgentMessage(models.Model):
+    ROLE_CHOICES = (
+        ('user', 'Пользователь'),
+        ('assistant', 'Ассистент'),
+        ('system', 'Система'),
+    )
+
+    snapshot = models.ForeignKey(
+        AnalysisSnapshot, on_delete=models.CASCADE, related_name='messages', null=True, blank=True
+    )
+    role = models.CharField(max_length=16, choices=ROLE_CHOICES)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Сообщение агента'
+        verbose_name_plural = 'Сообщения агента'
+
+    def __str__(self):
+        return f"{self.get_role_display()}: {self.content[:60]}"
+
+
+class AnalysisStatistic(models.Model):
+    snapshot = models.OneToOneField(
+        AnalysisSnapshot, on_delete=models.CASCADE, related_name='statistics', null=True, blank=True
+    )
+    total_transactions = models.PositiveIntegerField(default=0)
+    risky_transactions = models.PositiveIntegerField(default=0)
+    counterparties = models.PositiveIntegerField(default=0)
+    alerts = models.PositiveIntegerField(default=0)
+    generated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-generated_at']
+        verbose_name = 'Статистика анализа'
+        verbose_name_plural = 'Статистика анализов'
+
+    def __str__(self):
+        return f"Статистика {self.snapshot_id or '-'}"

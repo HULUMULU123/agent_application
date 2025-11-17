@@ -2,9 +2,12 @@ from datetime import datetime
 from io import BytesIO
 
 import pandas as pd
+from django.core.files.base import ContentFile
+from django.db import transaction
 
 from .external import ExternalAPIGateway
 from .ml import MockModelGateway
+from .models import AnalysisSnapshot, AnalysisStatistic, UploadedDocument
 
 
 def detect_kind(upload_name: str) -> str:
@@ -77,3 +80,50 @@ def build_analysis_payload(document_name: str) -> dict:
         'signals': signals,
         'generated_at': datetime.utcnow().isoformat(),
     }
+
+
+def persist_analysis(document: UploadedDocument, payload: dict) -> AnalysisSnapshot:
+    transactions = payload.get('transactions', [])
+    risky_transactions = len([item for item in transactions if str(item.get('risk', '')).startswith('выс')])
+
+    with transaction.atomic():
+        snapshot = AnalysisSnapshot.objects.create(
+            title=f'Анализ {document.display_name}',
+            payload=payload,
+            source_document=document,
+        )
+        AnalysisStatistic.objects.update_or_create(
+            snapshot=snapshot,
+            defaults={
+                'total_transactions': len(transactions),
+                'risky_transactions': risky_transactions,
+                'counterparties': len(payload.get('registry', [])),
+                'alerts': len(payload.get('signals', [])),
+            },
+        )
+    return snapshot
+
+
+def seed_demo_if_needed() -> AnalysisSnapshot:
+    snapshot = AnalysisSnapshot.objects.order_by('-created_at').first()
+    if snapshot:
+        return snapshot
+
+    content = 'date,amount,currency\n2024-11-12,18250,RUB\n2024-11-13,-7420,RUB\n'
+    document = UploadedDocument(
+        display_name='demo_statement.csv',
+        kind=detect_kind('demo_statement.csv'),
+        status='готово',
+        source='Демо пайплайн',
+        detected_columns=3,
+        detected_rows=2,
+        preview_notes='Демонстрационные данные для стартового экрана.',
+    )
+    document.file.save('demo_statement.csv', ContentFile(content), save=True)
+    payload = build_analysis_payload(document.display_name)
+    return persist_analysis(document, payload)
+
+
+def latest_analysis_payload() -> tuple[AnalysisSnapshot, dict]:
+    snapshot = seed_demo_if_needed()
+    return snapshot, snapshot.payload if snapshot else {}
