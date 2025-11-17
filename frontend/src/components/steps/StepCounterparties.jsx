@@ -14,6 +14,7 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
+import { useGlobalState } from '../../store/GlobalState.jsx';
 
 const COLORS = ['#55bb9b', '#2f3a45', '#9ddbc7', '#ffc857'];
 
@@ -38,7 +39,7 @@ const trendData = [
   { month: 'Ноя', operations: 108 },
 ];
 
-const anomalies = [
+const anomaliesDefault = [
   { label: 'Сомнительные связи', count: 4 },
   { label: 'Нетипичные суммы', count: 7 },
   { label: 'Неактивные контрагенты', count: 2 },
@@ -52,7 +53,7 @@ const velocityData = [
   { week: 'Нед 5', newPartners: 11, alerts: 4 },
 ];
 
-const innRegistry = [
+const innRegistryDefault = [
   { name: 'ООО «Астра»', inn: '7712458790', segment: 'Поставщик', operations: 86, risk: 'низкий' },
   { name: 'ЗАО «Радар»', inn: '7723589411', segment: 'Оборудование', operations: 42, risk: 'средний' },
   { name: 'ООО «Мастер Групп»', inn: '7736984102', segment: 'Строительство', operations: 28, risk: 'высокий' },
@@ -67,6 +68,26 @@ const riskBadgeMap = {
 };
 
 export default function StepCounterparties() {
+  const { analysis } = useGlobalState();
+
+  const anomalies = (analysis.signals || []).length
+    ? analysis.signals.map((signal, index) => ({
+        label: signal.title,
+        count: index + 1,
+        provider: signal.provider,
+      }))
+    : anomaliesDefault;
+
+  const innRegistry = (analysis.scores || []).length
+    ? analysis.scores.map((score, index) => ({
+        name: `Контрагент ${index + 1}`,
+        inn: score.inn,
+        segment: score.provider,
+        operations: Math.round((score.score || 0.5) * 120),
+        risk: score.score > 0.8 ? 'низкий' : score.score > 0.6 ? 'средний' : 'высокий',
+      }))
+    : innRegistryDefault;
+
   return (
     <div className="dashboard-grid">
       <div className="metric-card">
@@ -160,7 +181,14 @@ export default function StepCounterparties() {
                 alignItems: 'center',
               }}
             >
-              <span style={{ fontWeight: 600, color: '#2f3a45' }}>{item.label}</span>
+              <div>
+                <span style={{ fontWeight: 600, color: '#2f3a45' }}>{item.label}</span>
+                {item.provider && (
+                  <p className="helper-text" style={{ margin: 0 }}>
+                    {item.provider}
+                  </p>
+                )}
+              </div>
               <span style={{ fontSize: 18, fontWeight: 700, color: '#2f3a45' }}>{item.count}</span>
             </div>
           ))}
@@ -191,7 +219,7 @@ export default function StepCounterparties() {
             <tr>
               <th>Контрагент</th>
               <th>ИНН</th>
-              <th>Сегмент</th>
+              <th>Сегент</th>
               <th>Операций</th>
               <th>Риск</th>
             </tr>
@@ -204,7 +232,7 @@ export default function StepCounterparties() {
                 <td>{row.segment}</td>
                 <td>{row.operations}</td>
                 <td>
-                  <span className={`risk-badge ${riskBadgeMap[row.risk]}`}>{row.risk}</span>
+                  <span className={`status-chip ${riskBadgeMap[row.risk]}`}>{row.risk}</span>
                 </td>
               </tr>
             ))}

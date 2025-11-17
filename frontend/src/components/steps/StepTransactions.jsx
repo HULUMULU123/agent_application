@@ -12,6 +12,7 @@ import {
   Line,
   Legend,
 } from 'recharts';
+import { useGlobalState } from '../../store/GlobalState.jsx';
 
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -31,8 +32,8 @@ const formatNumber = (value) =>
 const defaultColDef = {
   sortable: true,
   resizable: true,
-  filter: true,            // базово включаем фильтры
-  floatingFilter: true,    // строка фильтра в хедере
+  filter: true, // базово включаем фильтры
+  floatingFilter: true, // строка фильтра в хедере
 };
 
 const textFilterParams = {
@@ -82,7 +83,9 @@ const columnDefs = [
 ];
 
 export default function StepTransactions() {
-  const rowData = useMemo(() => {
+  const { analysis, downloadExport } = useGlobalState();
+
+  const syntheticRows = useMemo(() => {
     return Array.from({ length: 30 }).map((_, index) => {
       const amountRaw = 5000 + Math.random() * 95000;
       const balanceRaw = 100000 + Math.random() * 250000;
@@ -107,6 +110,35 @@ export default function StepTransactions() {
       };
     });
   }, []);
+
+  const mlRows = useMemo(() => {
+    const transactions = analysis.transactions || [];
+    return transactions.map((tx, index) => {
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() - index);
+      const absoluteAmount = Math.abs(tx.amount || 0);
+      return {
+        id: `ml-${index}`,
+        date: baseDate.toLocaleDateString('ru-RU'),
+        time: baseDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        document: tx.document || 'ML-поток',
+        type: absoluteAmount >= 0 ? 'Поступление' : 'Списание',
+        category: tx.category || 'ML аналитика',
+        counterparty: tx.counterparty || `Контрагент ML-${index + 1}`,
+        inn: tx.inn || `77${(4500000 + index * 17).toString().padStart(7, '0')}`,
+        kpp: tx.kpp || `77${(5500000 + index * 11).toString().padStart(7, '0')}`,
+        purpose: tx.description || 'Сгенерировано пайплайном моделей',
+        amountRaw: absoluteAmount || 12000,
+        currency: tx.currency || 'RUB',
+        balanceRaw: 100000 + absoluteAmount * 2,
+        status: tx.risk === 'высокий' ? 'Отклонено' : 'Выполнено',
+        channel: 'API',
+        tag: tx.risk === 'высокий' ? 'Требует внимания' : 'Рутинное',
+      };
+    });
+  }, [analysis.transactions]);
+
+  const rowData = useMemo(() => [...syntheticRows, ...mlRows], [mlRows, syntheticRows]);
 
   const distribution = useMemo(() => {
     const buckets = [
@@ -133,8 +165,15 @@ export default function StepTransactions() {
     return dataset.map((item) => ({ amountRange: item.label, transactions: item.transactions }));
   }, [rowData]);
 
-  const activityByHour = useMemo(
-    () => [
+  const activityByHour = useMemo(() => {
+    if (analysis.activity_heatmap && analysis.activity_heatmap.length) {
+      return analysis.activity_heatmap.map((item) => ({
+        hour: item.day,
+        inflow: item.inflow,
+        outflow: item.outflow,
+      }));
+    }
+    return [
       { hour: 'Вт', inflow: 6, outflow: 2 },
       { hour: 'Ср', inflow: 9, outflow: 4 },
       { hour: 'Чт', inflow: 12, outflow: 7 },
@@ -142,17 +181,30 @@ export default function StepTransactions() {
       { hour: 'Сб', inflow: 14, outflow: 11 },
       { hour: 'Вс', inflow: 16, outflow: 9 },
       { hour: 'Пн', inflow: 13, outflow: 6 },
-      
-    ],
-    []
-  );
+    ];
+  }, [analysis.activity_heatmap]);
 
   return (
     <div className="grid-wrapper">
       <div className="page-card">
-        <div style={{display: 'flex', justifyContent: 'space-between', width:'100%', alignItems: 'center'}}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 12 }}>
           <h3 className="section-title">Таблица транзакций</h3>
-          <span style={{padding: '7px 10px', background: '#d6d6d6', fontSize:'8px', height: '25px', alignItems:'center', borderRadius: '7px', color:'#828282'}}>Скачать таблицу</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => downloadExport('csv')}
+              style={{ padding: '7px 10px', background: '#d6d6d6', fontSize: '10px', height: '28px', borderRadius: '7px', color: '#828282', border: 'none' }}
+            >
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadExport('excel')}
+              style={{ padding: '7px 10px', background: '#d6d6d6', fontSize: '10px', height: '28px', borderRadius: '7px', color: '#828282', border: 'none' }}
+            >
+              Excel
+            </button>
+          </div>
         </div>
         <div className="ag-theme-quartz" style={{ width: '100%', height: 420 }}>
           <AgGridReact
@@ -198,9 +250,9 @@ export default function StepTransactions() {
                 <XAxis dataKey="hour" tick={{ fill: '#536471', fontSize: 12 }} />
                 <YAxis allowDecimals={false} tick={{ fill: '#536471', fontSize: 12 }} />
                 <Tooltip formatter={(value) => `${value} операций`} />
-                <Legend verticalAlign="top" iconType="circle" height={36} />
+                <Legend verticalAlign="top" iconType="circle" height={32} />
                 <Line type="monotone" dataKey="inflow" name="Поступления" stroke="#55bb9b" strokeWidth={3} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="outflow" name="Расходные операции" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="outflow" name="Списания" stroke="#2f3a45" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
