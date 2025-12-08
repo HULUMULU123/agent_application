@@ -1,47 +1,28 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+import { buildMockUpload, mockAnalysis, mockDocuments, mockExportCsv } from './mockData.js';
 
-async function handleJsonResponse(response) {
-  const contentType = response.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
-  const payload = isJson ? await response.json() : null;
-
-  if (!response.ok) {
-    const message = payload?.detail || `Ошибка ${response.status}`;
-    throw new Error(message);
-  }
-
-  return payload;
+function clone(data) {
+  return JSON.parse(JSON.stringify(data));
 }
 
 export async function fetchDocuments() {
-  const response = await fetch(`${API_BASE}/uploads/`);
-  return handleJsonResponse(response);
+  return clone(mockDocuments);
 }
 
 export async function uploadDocument(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await fetch(`${API_BASE}/uploads/`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  return handleJsonResponse(response);
+  const document = buildMockUpload(file);
+  return {
+    document,
+    analysis: mockAnalysis,
+  };
 }
 
 export async function fetchAnalysisSummary() {
-  const response = await fetch(`${API_BASE}/analysis/summary/`);
-  return handleJsonResponse(response);
+  return clone(mockAnalysis);
 }
 
-export async function downloadExport(format = 'csv') {
-  const endpoint = format === 'excel' ? 'exports/excel/' : 'exports/csv/';
-  const response = await fetch(`${API_BASE}/${endpoint}`);
-  if (!response.ok) {
-    throw new Error(`Ошибка выгрузки (${response.status})`);
-  }
-  return response.blob();
+export async function downloadExport() {
+  const csv = mockExportCsv();
+  return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 }
 
 export default {

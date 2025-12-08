@@ -1,43 +1,24 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import api from '../services/api.js';
+import { mockAnalysis, mockDocuments } from '../services/mockData.js';
 
 const GlobalStateContext = createContext(null);
 
 export function GlobalStateProvider({ children }) {
-  const [documents, setDocuments] = useState([]);
-  const [analysis, setAnalysis] = useState({});
+  const [documents, setDocuments] = useState(mockDocuments);
+  const [analysis, setAnalysis] = useState(mockAnalysis);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastUploadName, setLastUploadName] = useState(null);
 
   const refreshDocuments = async () => {
-    try {
-      const data = await api.fetchDocuments();
-      setDocuments(data);
-    } catch (err) {
-      setError(err.message || 'Не удалось загрузить документы');
-    }
+    setDocuments(await api.fetchDocuments());
   };
 
   const refreshAnalysis = async () => {
-    try {
-      const result = await api.fetchAnalysisSummary();
-      const payload = result.payload || result;
-      setAnalysis({
-        ...payload,
-        history: result.history || payload.history || [],
-        statistics: result.statistics || payload.statistics || null,
-      });
-    } catch (err) {
-      setError(err.message || 'Не удалось получить аналитику');
-    }
+    setAnalysis(await api.fetchAnalysisSummary());
   };
-
-  useEffect(() => {
-    refreshDocuments();
-    refreshAnalysis();
-  }, []);
 
   const uploadDocument = async (file) => {
     setLoading(true);
@@ -45,7 +26,7 @@ export function GlobalStateProvider({ children }) {
     try {
       const data = await api.uploadDocument(file);
       const doc = data.document || data;
-      setDocuments((prev) => [doc, ...prev.filter((item) => item.id !== doc.id)]);
+      setDocuments((prev) => [doc, ...prev]);
       setLastUploadName(doc.display_name || file.name);
       if (data.analysis || data.payload) {
         const payload = data.analysis || data.payload;
@@ -57,20 +38,20 @@ export function GlobalStateProvider({ children }) {
       }
       return data;
     } catch (err) {
-      setError(err.message || 'Не удалось отправить файл на бэкенд');
+      setError(err.message || 'Не удалось обработать файл');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const downloadExport = async (format = 'csv') => {
+  const downloadExport = async () => {
     try {
-      const blob = await api.downloadExport(format);
+      const blob = await api.downloadExport();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = format === 'excel' ? 'agent-transactions.xlsx' : 'agent-transactions.csv';
+      link.download = 'agent-transactions.csv';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
