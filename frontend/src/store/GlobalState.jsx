@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import api from '../services/api.js';
+import mockAnalysis from './mockAnalysis.js';
 
 const GlobalStateContext = createContext(null);
 
@@ -12,6 +13,7 @@ export function GlobalStateProvider({ children }) {
   const [lastUploadName, setLastUploadName] = useState(null);
   const [downloadBlob, setDownloadBlob] = useState(null);
   const [downloadName, setDownloadName] = useState(null);
+  const [analysis] = useState(mockAnalysis);
 
   const uploadDocument = async (file) => {
     setLoading(true);
@@ -59,8 +61,9 @@ export function GlobalStateProvider({ children }) {
       lastUploadName,
       uploadDocument,
       downloadExport,
+      analysis,
     }),
-    [downloadName, error, lastUploadName, loading, tableColumns, tableRows]
+    [analysis, downloadName, error, lastUploadName, loading, tableColumns, tableRows]
   );
 
   return <GlobalStateContext.Provider value={value}>{children}</GlobalStateContext.Provider>;
