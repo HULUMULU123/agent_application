@@ -2,28 +2,20 @@ import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useGlobalState } from '../../store/GlobalState.jsx';
 
-const statusTone = {
-  загружено: 'status-positive',
-  готово: 'status-positive',
-  'в очереди': 'status-progress',
-  анализируется: 'status-progress',
-  архив: 'status-muted',
-  черновик: 'status-muted',
-};
-
-export default function StepUpload({ onStartAnalysis, disabled }) {
+export default function StepUpload({ onStartAnalysis, onUploadComplete, disabled }) {
   const fileInputRef = useRef(null);
   const [localStatus, setLocalStatus] = useState(null);
-  const { documents, uploadDocument, loading, error, lastUploadName } = useGlobalState();
+  const { uploadDocument, loading, error, lastUploadName } = useGlobalState();
 
   const handleFileSelect = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setLocalStatus(`Отправляем ${file.name} ...`);
+    onStartAnalysis();
     uploadDocument(file)
       .then(() => {
         setLocalStatus('Файл отправлен, запускаем анализ');
-        onStartAnalysis();
+        onUploadComplete();
       })
       .catch(() => {
         setLocalStatus('Не удалось загрузить файл, попробуйте снова');
@@ -37,24 +29,6 @@ export default function StepUpload({ onStartAnalysis, disabled }) {
 
   const handleFilePicker = () => {
     fileInputRef.current?.click();
-  };
-
-  const formatType = (kind) => {
-    if (!kind) return '—';
-    if (['csv', 'pdf', 'excel'].includes(kind)) {
-      return kind.toUpperCase();
-    }
-    return kind;
-  };
-
-  const formatDate = (value) => {
-    if (!value) return '—';
-    try {
-      const parsed = new Date(value);
-      return parsed.toLocaleString('ru-RU');
-    } catch (err) {
-      return value;
-    }
   };
 
   return (
@@ -78,8 +52,8 @@ export default function StepUpload({ onStartAnalysis, disabled }) {
           <button className="secondary-button" type="button" onClick={handleFilePicker} disabled={disabled || loading}>
             Выбрать файл
           </button>
-          <button className="primary-button" type="button" onClick={onStartAnalysis} disabled={disabled || loading}>
-            Запустить анализ
+          <button className="primary-button" type="button" onClick={handleFilePicker} disabled={disabled || loading}>
+            Загрузить и отправить
           </button>
         </div>
         {(localStatus || lastUploadName) && (
@@ -93,42 +67,13 @@ export default function StepUpload({ onStartAnalysis, disabled }) {
           </p>
         )}
       </div>
-      <div className="table-stack">
-        <div className="table-header">
-          <h4>Последние документы</h4>
-          <span>Всё, что вы загружали за последние дни</span>
-        </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Документ</th>
-              <th>Тип</th>
-              <th>Загружено</th>
-              <th>Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((doc) => (
-              <tr key={doc.id || doc.display_name}>
-                <td>{doc.display_name || doc.id}</td>
-                <td>{formatType(doc.kind || doc.type)}</td>
-                <td>{formatDate(doc.uploaded_at || doc.uploadedAt)}</td>
-                <td>
-                  <span className={`status-chip ${statusTone[doc.status] || 'status-progress'}`}>
-                    {doc.status || 'анализируется'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
 
 StepUpload.propTypes = {
   onStartAnalysis: PropTypes.func.isRequired,
+  onUploadComplete: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
 };
 

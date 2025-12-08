@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
 import Roadmap from './components/Roadmap.jsx';
 import StepUpload from './components/steps/StepUpload.jsx';
@@ -8,6 +8,7 @@ import StepLegal from './components/steps/StepLegal.jsx';
 import StatisticsPage from './components/pages/StatisticsPage.jsx';
 import HistoryPage from './components/pages/HistoryPage.jsx';
 import OverlayLoader from './components/OverlayLoader.jsx';
+import { useGlobalState } from './store/GlobalState.jsx';
 
 import './styles/App.css';
 
@@ -73,38 +74,25 @@ export default function App() {
   const [activePage, setActivePage] = useState('Главная');
   const [activeStep, setActiveStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const timeoutsRef = useRef([]);
+  const { loading, tableRows } = useGlobalState();
 
   useEffect(() => {
-    return () => {
-      timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
-      timeoutsRef.current = [];
-    };
-  }, []);
+    setIsAnalyzing(loading);
+  }, [loading]);
 
   const handleNavigate = (page) => {
     setActivePage(page);
   };
 
   const handleStartAnalysis = () => {
-    if (isAnalyzing) return;
     setActivePage('Главная');
     setIsAnalyzing(true);
     setActiveStep(1);
+  };
 
-    timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
-    timeoutsRef.current = [];
-
-    steps.forEach((step, index) => {
-      if (index === 0) return;
-      const timeoutId = setTimeout(() => {
-        setActiveStep(2);
-        if (index === 1) {
-          setIsAnalyzing(false);
-        }
-      }, index * 1000);
-      timeoutsRef.current.push(timeoutId);
-    });
+  const handleUploadComplete = () => {
+    setActiveStep(2);
+    setIsAnalyzing(false);
   };
 
   const handleStepClick = (stepId) => {
@@ -114,9 +102,15 @@ export default function App() {
   const renderStepContent = () => {
     switch (activeStep) {
       case 1:
-        return <StepUpload onStartAnalysis={handleStartAnalysis} disabled={isAnalyzing} />;
+        return (
+          <StepUpload
+            onStartAnalysis={handleStartAnalysis}
+            disabled={loading || isAnalyzing}
+            onUploadComplete={handleUploadComplete}
+          />
+        );
       case 2:
-        return <StepTransactions />;
+        return <StepTransactions rows={tableRows} onBack={() => setActiveStep(1)} />;
       case 3:
         return <StepCounterparties />;
       case 4:
@@ -164,7 +158,7 @@ export default function App() {
     <div className="app-shell">
       <Header activePage={activePage} onNavigate={handleNavigate} />
       {renderPage()}
-      <OverlayLoader visible={isAnalyzing} label="Агент обрабатывает этапы и собирает инсайты…" />
+      <OverlayLoader visible={isAnalyzing || loading} label="Загружаем таблицу и подготавливаем анализ…" />
     </div>
   );
 }
