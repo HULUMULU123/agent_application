@@ -672,6 +672,18 @@
   color: #8c1f1f;
 }
 
+.risk-table tbody tr.risk-row-high {
+  background: #fdecea;
+}
+
+.risk-table tbody tr.risk-row-medium {
+  background: #fff7e6;
+}
+
+.risk-table tbody tr.risk-row-low {
+  background: #f0faf4;
+}
+
 .ag-theme-quartz .ag-row.risk-row-high {
   background: #fdecea;
 }
