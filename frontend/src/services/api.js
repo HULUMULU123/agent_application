@@ -1,14 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
 
-let xlsxLoader;
+import * as XLSX from 'xlsx';
 
-async function loadXlsx() {
-  if (!xlsxLoader) {
-    xlsxLoader = import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm');
-  }
-  return xlsxLoader;
-}
-
+/**
+ * Загрузка файла на backend
+ */
 export async function uploadDocument(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -31,10 +27,13 @@ export async function uploadDocument(file) {
   return { blob, filename };
 }
 
+/**
+ * Разбор Excel-файла, который вернул backend
+ */
 export async function parseExcelBlob(blob) {
-  const XLSX = await loadXlsx();
   const buffer = await blob.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: 'array' });
+
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
@@ -44,6 +43,7 @@ export async function parseExcelBlob(blob) {
 
   const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
   const firstRow = rows[0] || {};
+
   const columns = Object.keys(firstRow).map((key) => ({
     field: key,
     headerName: key,
