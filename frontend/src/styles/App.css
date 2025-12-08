@@ -574,6 +574,58 @@
   border-spacing: 0 14px;
 }
 
+.summary-bar {
+  margin: 12px 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f5f7fb;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--dark);
+}
+
+.summary-dot {
+  opacity: 0.6;
+  color: var(--muted);
+}
+
+.risk-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 10px 0 18px;
+}
+
+.risk-summary-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 24px -18px rgba(17, 24, 39, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.risk-summary-label {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.risk-summary-value {
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.risk-summary-amount {
+  color: #1e6f4a;
+  font-weight: 600;
+}
+
 .risk-table thead th {
   text-align: left;
   font-size: 13px;

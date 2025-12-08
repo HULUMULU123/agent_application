@@ -1,28 +1,50 @@
 import React from 'react';
 
-const legalRows = [
+const legalOperations = [
   {
     id: 1,
-    
-    amount: '52 200 000 ₽',
-    notes: '122',
+    amount: '18 000 000 ₽',
     risk: 'низкий',
-    more: 'Подробнее'
   },
   {
     id: 2,
-    
-    amount: '7 000 000 ₽',
-    notes: '22',
-    risk: 'средний',
-    more: 'Подробнее'
+    amount: '6 500 000 ₽',
+    risk: 'низкий',
   },
   {
     id: 3,
-    amount: '4 450 000 ₽',
-    notes: '7',
+    amount: '4 750 000 ₽',
+    risk: 'низкий',
+  },
+  {
+    id: 4,
+    amount: '860 000 ₽',
+    risk: 'низкий',
+  },
+  {
+    id: 5,
+    amount: '2 950 000 ₽',
+    risk: 'средний',
+  },
+  {
+    id: 6,
+    amount: '1 820 000 ₽',
+    risk: 'средний',
+  },
+  {
+    id: 7,
+    amount: '2 230 000 ₽',
+    risk: 'средний',
+  },
+  {
+    id: 8,
+    amount: '3 100 000 ₽',
     risk: 'высокий',
-    more: 'Подробнее'
+  },
+  {
+    id: 9,
+    amount: '1 350 000 ₽',
+    risk: 'высокий',
   },
 ];
 
@@ -47,10 +69,9 @@ function formatRub(n) {
 
 function toCSV(rows) {
   const headers = [
-    'Общая сумма',
-    'Количество операций',
     'Риск',
-    ''
+    'Количество операций',
+    'Общая сумма',
   ];
   const escape = (v) => {
     const s = String(v ?? '');
@@ -64,13 +85,9 @@ function toCSV(rows) {
     headers.join(';'),
     ...rows.map((r) =>
       [
-        r.document,
-        r.counterparty,
-        r.date,
-        r.obligation,
-        r.amount,
-        r.notes,
         r.risk,
+        r.operationCount,
+        formatRub(r.totalAmount),
       ].map(escape).join(';')
     ),
   ];
@@ -78,22 +95,45 @@ function toCSV(rows) {
 }
 
 export default function StepLegal() {
-  const sortedRows = React.useMemo(
-    () =>
-      [...legalRows].sort(
-        (a, b) => riskOrder[b.risk] - riskOrder[a.risk]
-      ),
-    []
-  );
+  const { riskRows, totalAmount, totalOperations } = React.useMemo(() => {
+    const grouped = legalOperations.reduce(
+      (acc, operation) => {
+        const risk = (operation.risk || '').toLowerCase();
+        const amount = parseAmountToNumber(operation.amount);
 
-  const totalCount = sortedRows.length;
-  const totalAmount = sortedRows.reduce(
-    (acc, r) => acc + parseAmountToNumber(r.amount),
-    0
-  );
+        if (!acc.byRisk[risk]) {
+          acc.byRisk[risk] = {
+            risk,
+            operationCount: 0,
+            totalAmount: 0,
+          };
+        }
+
+        acc.byRisk[risk].operationCount += 1;
+        acc.byRisk[risk].totalAmount += amount;
+        acc.totalAmount += amount;
+        acc.totalOperations += 1;
+        return acc;
+      },
+      { byRisk: {}, totalAmount: 0, totalOperations: 0 }
+    );
+
+    const riskRows = Object.values(grouped.byRisk)
+      .map((entry) => ({
+        ...entry,
+        formattedAmount: formatRub(entry.totalAmount),
+      }))
+      .sort((a, b) => riskOrder[b.risk] - riskOrder[a.risk]);
+
+    return {
+      riskRows,
+      totalAmount: grouped.totalAmount,
+      totalOperations: grouped.totalOperations,
+    };
+  }, []);
 
   const handleDownload = () => {
-    const csv = toCSV(sortedRows);
+    const csv = toCSV(riskRows);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -128,32 +168,43 @@ export default function StepLegal() {
         службе безопасности и юридическому департаменту.
       </p>
 
-      
+      <div className="summary-bar" role="status" aria-live="polite">
+        <span className="summary-dot" aria-hidden>•</span>
+        <span>Всего операций: {totalOperations}</span>
+        <span className="summary-dot" aria-hidden>•</span>
+        <span>Общий объем: {formatRub(totalAmount)}</span>
+      </div>
+
+      <div className="risk-summary-grid">
+        {riskRows.map((row) => (
+          <div key={row.risk} className="risk-summary-card">
+            <div className="risk-summary-label">{row.risk}</div>
+            <div className="risk-summary-value">{row.operationCount} операции</div>
+            <div className="risk-summary-amount">{row.formattedAmount}</div>
+          </div>
+        ))}
+      </div>
+
+
 
       <table className="risk-table">
         <thead>
           <tr>
-            
-            
+
+
             <th>Общая сумма</th>
             <th>Количество операций</th>
             <th>Риск</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
-          {sortedRows.map((row) => (
-            <tr key={row.id}>
-              <td>{row.amount}</td>
-              <td>{row.notes}</td>
+          {riskRows.map((row) => (
+            <tr key={row.risk}>
+              <td>{row.formattedAmount}</td>
+              <td>{row.operationCount}</td>
               <td>
                 <span className={`risk-badge ${riskClassMap[row.risk]}`}>
                   {row.risk}
-                </span>
-              </td>
-              <td>
-                <span style={{padding: '7px 10px', background:'rgb(70, 151, 142)', borderRadius:'7px', color: '#fff', fontWeight: '700' }}>
-                  {row.more}
                 </span>
               </td>
             </tr>
