@@ -39,6 +39,20 @@ export default function StepTransactions({ rows, onBack }) {
               paginationPageSize={15}
               animateRows
               suppressMenuHide={false}
+              rowClassRules={{
+                'risk-row-high': ({ data }) => {
+                  const value = (data?.risk_level ?? '').toString().toLowerCase();
+                  return value === 'high' || value === 'высокий';
+                },
+                'risk-row-medium': ({ data }) => {
+                  const value = (data?.risk_level ?? '').toString().toLowerCase();
+                  return value === 'medium' || value === 'средний';
+                },
+                'risk-row-low': ({ data }) => {
+                  const value = (data?.risk_level ?? '').toString().toLowerCase();
+                  return value === 'low' || value === 'низкий';
+                },
+              }}
               defaultColDef={{ filter: true, sortable: true, resizable: true }}
             />
           ) : (

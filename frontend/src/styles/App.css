@@ -620,6 +620,18 @@
   color: #8c1f1f;
 }
 
+.ag-theme-quartz .ag-row.risk-row-high {
+  background: #fdecea;
+}
+
+.ag-theme-quartz .ag-row.risk-row-medium {
+  background: #fff7e6;
+}
+
+.ag-theme-quartz .ag-row.risk-row-low {
+  background: #f0faf4;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
