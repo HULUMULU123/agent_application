@@ -179,7 +179,7 @@ export default function StepCounterparties() {
             <tr>
               <th>Контрагент</th>
               <th>ИНН</th>
-              <th>Сегент</th>
+              <th>Сегмент</th>
               <th>Операций</th>
               <th>Риск</th>
             </tr>
